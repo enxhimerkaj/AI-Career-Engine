@@ -1,9 +1,41 @@
 import re
 from html import unescape
 
-STOP_PHRASES = {
-    "the", "and", "or", "with", "for", "in", "of", "to", "a", "an",
-    "is", "are", "be", "as", "on", "by", "from", "at", "this", "that"
+CS_KEYWORDS = {
+    # programming languages
+    "python", "java", "javascript", "typescript", "c#", "c++", "php", "ruby",
+    "go", "swift", "kotlin", "r", "scala",
+
+    # web/frontend
+    "html", "css", "react", "angular", "vue", "next.js", "tailwind",
+    "bootstrap", "jquery",
+
+    # backend
+    "node.js", "express", "flask", "django", "fastapi", "spring boot",
+    ".net", "asp.net", "rest api", "restful api", "graphql",
+
+    # databases
+    "sql", "mysql", "postgresql", "mongodb", "sqlite", "oracle",
+    "sql server", "redis",
+
+    # cloud/devops
+    "aws", "azure", "google cloud", "gcp", "docker", "kubernetes",
+    "git", "github", "gitlab", "ci/cd", "linux", "bash",
+
+    # data/ai
+    "machine learning", "deep learning", "artificial intelligence",
+    "ai", "data analysis", "data analytics", "pandas", "numpy",
+    "scikit-learn", "tensorflow", "pytorch", "power bi", "tableau",
+
+    # cybersecurity/networking
+    "cybersecurity", "networking", "network security", "siem",
+    "firewalls", "encryption",
+
+    # software skills
+    "debugging", "testing", "unit testing", "api development",
+    "object oriented programming", "oop", "agile", "scrum",
+    "software development", "web development", "full stack",
+    "frontend", "backend",
 }
 
 LEAD_PATTERNS = [
@@ -16,13 +48,12 @@ LEAD_PATTERNS = [
     r"familiarity with ([^.;:\n]+)",
     r"background in ([^.;:\n]+)",
     r"understanding of ([^.;:\n]+)",
-    r"ability to ([^.;:\n]+)",
-    r"responsible for ([^.;:\n]+)",
     r"required skills[:\-]?\s*([^.\n]+)",
     r"qualifications[:\-]?\s*([^.\n]+)",
     r"requirements[:\-]?\s*([^.\n]+)",
     r"preferred qualifications[:\-]?\s*([^.\n]+)",
 ]
+
 
 def clean_text(text: str) -> str:
     if not text:
@@ -33,38 +64,14 @@ def clean_text(text: str) -> str:
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
+
 def split_phrases(text: str):
-    parts = re.split(r",|/| and | or |\||;", text, flags=re.IGNORECASE)
-    cleaned = []
+    return [
+        part.strip(" .:-").strip()
+        for part in re.split(r",|/| and | or |\||;", text, flags=re.IGNORECASE)
+        if part.strip(" .:-").strip()
+    ]
 
-    for part in parts:
-        part = part.strip(" .:-").strip()
-        if not part:
-            continue
-        if len(part) < 2:
-            continue
-        cleaned.append(part)
-
-    return cleaned
-
-def extract_bullet_like_phrases(text: str):
-    phrases = []
-
-    raw_lines = re.split(r"\n|•|- |\*", text)
-    for line in raw_lines:
-        line = clean_text(line)
-        if not line:
-            continue
-
-        lowered = line.lower()
-        if any(word in lowered for word in [
-            "experience", "knowledge", "proficient", "familiarity",
-            "ability", "required", "preferred", "bachelor", "master",
-            "certification", "license", "skill", "background"
-        ]):
-            phrases.append(line)
-
-    return phrases
 
 def normalize_phrase(phrase: str) -> str:
     phrase = phrase.strip(" .:-").strip()
@@ -73,17 +80,34 @@ def normalize_phrase(phrase: str) -> str:
     if not phrase:
         return ""
 
-    words = phrase.split()
-    if len(words) > 8:
-        phrase = " ".join(words[:8])
-
-    if phrase.lower() in STOP_PHRASES:
-        return ""
-
     return phrase
+
+
+def is_cs_related(phrase: str) -> bool:
+    phrase_lower = phrase.lower()
+
+    for keyword in CS_KEYWORDS:
+        if keyword in phrase_lower:
+            return True
+
+    return False
+
+
+def extract_cs_keywords(text: str):
+    found = []
+
+    text_lower = text.lower()
+
+    for keyword in CS_KEYWORDS:
+        if keyword in text_lower:
+            found.append(keyword)
+
+    return found
+
 
 def extract_requirements(description: str):
     text = clean_text(description)
+
     if not text:
         return []
 
@@ -91,25 +115,27 @@ def extract_requirements(description: str):
 
     for pattern in LEAD_PATTERNS:
         matches = re.findall(pattern, text, flags=re.IGNORECASE)
+
         for match in matches:
-            for phrase in split_phrases(match):
+            phrases = split_phrases(match)
+
+            for phrase in phrases:
                 normalized = normalize_phrase(phrase)
-                if normalized:
+
+                if normalized and is_cs_related(normalized):
                     found.append(normalized)
 
-    bullet_lines = extract_bullet_like_phrases(description)
-    for line in bullet_lines:
-        line = normalize_phrase(line)
-        if line:
-            found.append(line)
+    found.extend(extract_cs_keywords(text))
 
     seen = set()
     results = []
 
     for item in found:
-        key = item.lower()
+        clean_item = normalize_phrase(item)
+        key = clean_item.lower()
+
         if key not in seen:
             seen.add(key)
-            results.append(item)
+            results.append(clean_item)
 
     return results[:25]
