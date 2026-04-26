@@ -31,3 +31,8 @@ def root():
 @app.post("/match-jobs")
 def match_jobs_api(profile: UserProfile):
     return {"jobs": match_jobs(profile.model_dump())}
+@app.get("/job-count")
+def job_count():
+    from app.matching.recommender import load_jobs
+    jobs = load_jobs()
+    return {"job_count": len(jobs)}
