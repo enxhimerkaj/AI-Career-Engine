@@ -51,8 +51,11 @@ function CareerForm() {
     currentSkills: [],
   });
 
+  const [customSkill, setCustomSkill] = useState("");
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -98,9 +101,45 @@ function CareerForm() {
     });
   };
 
+  const addCustomSkill = () => {
+    const skill = customSkill.trim();
+
+    if (!skill || formData.currentSkills.includes(skill)) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      currentSkills: [...prev.currentSkills, skill],
+    }));
+
+    setCustomSkill("");
+  };
+
+  const removeSkill = (skillToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      currentSkills: prev.currentSkills.filter((skill) => skill !== skillToRemove),
+    }));
+  };
+
+  const handleCustomSkillKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addCustomSkill();
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem("careerFormData", JSON.stringify(formData));
+
+    const cleanedData = {
+      ...formData,
+      experienceTitles: formData.experienceTitles.filter((title) => title.trim() !== ""),
+      currentSkills: formData.currentSkills.filter((skill) => skill.trim() !== ""),
+    };
+
+    localStorage.setItem("careerFormData", JSON.stringify(cleanedData));
     navigate("/recommendations");
   };
 
@@ -108,10 +147,11 @@ function CareerForm() {
     <div className="app">
       <div className="card form-card">
         <h1>Welcome to Career Engine AI</h1>
+
         <p className="subtitle">
-         This tool is designed for <strong>computer science and tech careers</strong>. 
-         Fill out the form below and we’ll match you with relevant roles based on 
-         your target job, experience, skills, and education.
+          This tool is designed for <strong>computer science and tech careers</strong>.
+          Fill out the form below and we’ll match you with relevant roles based on
+          your target job, experience, skills, and education.
         </p>
 
         <form className="career-form" onSubmit={handleSubmit}>
@@ -158,7 +198,7 @@ function CareerForm() {
             onChange={handleChange}
           />
 
-          <label>Experience Titles</label>
+          <label>Experience Titles (optional)</label>
           {formData.experienceTitles.map((title, index) => (
             <div key={index} className="experience-row">
               <input
@@ -166,8 +206,8 @@ function CareerForm() {
                 placeholder="Example: Data Analyst Intern"
                 value={title}
                 onChange={(e) => handleExperienceChange(index, e.target.value)}
-                required={index === 0}
               />
+
               <button
                 type="button"
                 className="small-btn"
@@ -201,6 +241,42 @@ function CareerForm() {
               </label>
             ))}
           </div>
+
+          <label>Add Extra Skill (optional)</label>
+          <div className="skill-input-row">
+            <input
+              type="text"
+              placeholder="Example: TypeScript, Power BI, Jira"
+              value={customSkill}
+              onChange={(e) => setCustomSkill(e.target.value)}
+              onKeyDown={handleCustomSkillKeyDown}
+            />
+
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={addCustomSkill}
+            >
+              Add Skill
+            </button>
+          </div>
+
+          {formData.currentSkills.length > 0 && (
+            <div className="checkbox-group">
+              {formData.currentSkills.map((skill) => (
+                <div key={skill} className="checkbox-item">
+                  <span>{skill}</span>
+                  <button
+                    type="button"
+                    className="small-btn"
+                    onClick={() => removeSkill(skill)}
+                  >
+                    x
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <button type="submit" className="primary-btn">
             Find Matching Jobs
