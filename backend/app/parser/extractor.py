@@ -60,6 +60,7 @@ def clean_text(text: str) -> str:
         return ""
 
     text = unescape(text)
+    text = text.replace("&nbsp;", " ")
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
