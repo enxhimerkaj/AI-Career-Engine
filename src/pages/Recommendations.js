@@ -83,7 +83,13 @@ function Recommendations() {
                 </p>
 
                 <p>
-                  <strong>Missing Skills:</strong>{" "}
+                  <strong>Skills / Requirements to Improve:</strong>{" "}
+                  {job.experience_requirements?.length > 0 && (
+  <p>
+    <strong>Experience Requirements:</strong>{" "}
+    {job.experience_requirements.join(", ")}
+  </p>
+)}
                   {job.missing_skills?.length
                     ? job.missing_skills.join(", ")
                     : "None"}

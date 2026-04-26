@@ -77,17 +77,36 @@ def text_similarity_score(search_terms, job_title, description):
 
     return min(score, 50)
 
+import re
 
-def calculate_requirement_score(user_skills, job_requirements):
+def extract_years(text):
+    match = re.search(r"(\d+)\s*\+?\s*years", text.lower())
+    return int(match.group(1)) if match else None
+
+def calculate_requirement_score(user_skills, job_requirements, user_years):
     if not job_requirements:
-        return 0, [], []
+        return 0, [], [], []
 
-    user_skills_lower = [skill.lower().strip() for skill in user_skills if skill.strip()]
+    user_skills_lower = [s.lower().strip() for s in user_skills if s.strip()]
     matched = []
     missing = []
+    experience_reqs = []
 
-    for requirement in job_requirements:
-        req_lower = requirement.lower().strip()
+    for req in job_requirements:
+        req_lower = req.lower().strip()
+
+        # detect experience requirement
+        years_required = extract_years(req_lower)
+        if years_required is not None:
+            experience_reqs.append(req)
+
+            if user_years and int(user_years) >= years_required:
+                matched.append(req)
+            else:
+                missing.append(req)
+
+            continue
+
         matched_flag = False
 
         for skill in user_skills_lower:
@@ -95,20 +114,17 @@ def calculate_requirement_score(user_skills, job_requirements):
                 matched_flag = True
                 break
 
-            req_words = set(req_lower.split())
-            skill_words = set(skill.split())
-
-            if len(req_words & skill_words) > 0:
+            if len(set(req_lower.split()) & set(skill.split())) > 0:
                 matched_flag = True
                 break
 
         if matched_flag:
-            matched.append(requirement)
+            matched.append(req)
         else:
-            missing.append(requirement)
+            missing.append(req)
 
     score = int((len(matched) / len(job_requirements)) * 35)
-    return score, matched, missing
+    return score, matched, missing, experience_reqs
 
 
 def is_tech_related_job(title, description):
@@ -246,9 +262,12 @@ def match_jobs(user_profile):
 
         title_score = text_similarity_score(search_terms, job_title, description)
 
-        requirement_score, matched_requirements, missing_requirements = calculate_requirement_score(
-            user_skills,
-            job_requirements
+        user_years = user_profile.get("yearsOfExperience", "0")
+
+        requirement_score, matched_requirements, missing_requirements, experience_reqs = calculate_requirement_score(
+        user_skills,
+        job_requirements,
+        user_years
         )
 
         required_education = detect_required_education(description)
@@ -268,6 +287,7 @@ def match_jobs(user_profile):
             "match_score": total_score,
             "matched_skills": matched_requirements,
             "missing_skills": missing_requirements,
+            "experience_requirements": experience_reqs,
             "education_match": education_match,
             "missing_education": required_education if not education_match else None,
             "why_match": build_why_match(

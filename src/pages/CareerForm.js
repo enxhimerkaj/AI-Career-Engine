@@ -48,6 +48,7 @@ function CareerForm() {
     major: "",
     university: "",
     experienceTitles: [""],
+    yearsOfExperience: "",
     currentSkills: [],
   });
 
@@ -225,6 +226,22 @@ function CareerForm() {
           >
             Add Another Experience Title
           </button>
+          <label>Years of Experience</label>
+            <select
+            name="yearsOfExperience"
+            value={formData.yearsOfExperience}
+            onChange={handleChange}
+            required
+            >
+            <option value="">Select years of experience</option>
+            <option value="0">No professional experience yet</option>
+            <option value="1">Less than 1 year</option>
+            <option value="2">1-2 years</option>
+            <option value="3">3-4 years</option>
+            <option value="5">5+ years</option>
+            <option value="7">7+ years</option>
+            <option value="10">10+ years</option>
+            </select>
 
           <label>Skills</label>
           <p className="small-text">Select the skills you already have:</p>

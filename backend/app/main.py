@@ -22,6 +22,7 @@ class UserProfile(BaseModel):
     major: str = ""
     university: str = ""
     experienceTitles: List[str] = Field(default_factory=list)
+    yearsOfExperience: str = ""
     currentSkills: List[str] = Field(default_factory=list)
 
 @app.get("/")
